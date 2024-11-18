@@ -3,10 +3,7 @@ export async function transcribeAudio(audioBlob: Blob): Promise<string> {
     const formData = new FormData();
     
     // Add the file with explicit MIME type
-    formData.append('file', audioBlob, {
-      type: audioBlob.type,
-      filename: 'audio.webm'
-    });
+    formData.append('file', audioBlob, 'audio.webm');
 
     // Log the form data for debugging
     console.log('Sending file:', audioBlob.type, audioBlob.size);
