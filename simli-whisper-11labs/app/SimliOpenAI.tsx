@@ -49,23 +49,51 @@ const SimliOpenAI: React.FC<SimliOpenAIProps> = ({
   /**
    * Initializes the Simli client with the provided configuration.
    */
+  // const initializeSimliClient = useCallback(() => {
+  //   if (videoRef.current && audioRef.current) {
+  //     const SimliConfig = {
+  //       apiKey: process.env.NEXT_PUBLIC_SIMLI_API_KEY,
+  //       faceID: simli_faceid,
+  //       handleSilence: true,
+  //       maxSessionLength: 600, // in seconds
+  //       maxIdleTime: 600, // in seconds
+  //       videoRef: videoRef,
+  //       audioRef: audioRef,
+  //     };
+
+  //     simliClient.Initialize(SimliConfig as any);
+  //     console.log("Simli Client initialized");
+  //   }
+  // }, [simli_faceid]);
   const initializeSimliClient = useCallback(() => {
     if (videoRef.current && audioRef.current) {
-      const SimliConfig = {
-        apiKey: process.env.NEXT_PUBLIC_SIMLI_API_KEY,
-        faceID: simli_faceid,
-        handleSilence: true,
-        maxSessionLength: 600, // in seconds
-        maxIdleTime: 600, // in seconds
-        videoRef: videoRef,
-        audioRef: audioRef,
-      };
-
-      simliClient.Initialize(SimliConfig as any);
-      console.log("Simli Client initialized");
+      try {
+        const SimliConfig = {
+          apiKey: process.env.NEXT_PUBLIC_SIMLI_API_KEY,
+          faceID: simli_faceid,
+          handleSilence: true,
+          maxSessionLength: 600,
+          maxIdleTime: 600,
+          videoRef: videoRef,
+          audioRef: audioRef,
+          debug: true // Enable debug logging
+        };
+  
+        console.log('Initializing Simli with config:', {
+          ...SimliConfig,
+          apiKey: '[REDACTED]' // Don't log the API key
+        });
+  
+        simliClient.Initialize(SimliConfig as any);
+        console.log("Simli Client initialized successfully");
+      } catch (error) {
+        console.error("Error initializing Simli client:", error);
+        setError("Failed to initialize Simli client: ",error.message);
+      }
+    } else {
+      console.error("Video or audio ref not available");
     }
   }, [simli_faceid]);
-
   /**
    * Initializes the OpenAI client, sets up event listeners, and connects to the API.
    */
@@ -428,30 +456,69 @@ const SimliOpenAI: React.FC<SimliOpenAIProps> = ({
   }, [stopRecording]);
 
   // Effect to initialize Simli client and clean up resources on unmount
+  // useEffect(() => {
+  //   if (isSecondRun.current) {
+  //     if (simliClient) {
+  //       simliClient?.on("connected", () => {
+  //         console.log("SimliClient connected");
+  //         const audioData = new Uint8Array(6000).fill(0);
+  //         simliClient?.sendAudioData(audioData);
+  //         console.log("Sent initial audio data");
+  //         initializeOpenAIClient();
+  //       });
+
+  //       simliClient?.on("disconnected", () => {
+  //         console.log("SimliClient disconnected");
+  //         // Reinitialize and restart
+    
+          
+  //         console.log("Successfully reconnected to SimliClient");
+  //         // openAIClientRef.current?.disconnect();
+  //         // if (audioContextRef.current) {
+  //         //   audioContextRef.current?.close();
+  //         // }
+  //       });
+  //     }
+
+  //     return () => {
+  //       try {
+  //         simliClient?.close();
+  //         openAIClientRef.current?.disconnect();
+  //         if (audioContextRef.current) {
+  //           audioContextRef.current?.close();
+  //         }
+  //       } catch {}
+  //     };
+  //   }
+  //   isSecondRun.current = true;
+  // }, [initializeSimliClient]);
   useEffect(() => {
     if (isSecondRun.current) {
       if (simliClient) {
         simliClient?.on("connected", () => {
-          console.log("SimliClient connected");
-          const audioData = new Uint8Array(6000).fill(0);
-          simliClient?.sendAudioData(audioData);
-          console.log("Sent initial audio data");
-          initializeOpenAIClient();
+          console.log("SimliClient connected successfully");
+          try {
+            const audioData = new Uint8Array(6000).fill(0);
+            simliClient?.sendAudioData(audioData);
+            console.log("Sent initial audio data successfully");
+            initializeOpenAIClient();
+          } catch (error) {
+            console.error("Error during initial setup:", error);
+            setError(`Connection error: ${error.message}`);
+          }
         });
-
+  
+        simliClient?.on("error", (error: any) => {
+          console.error("SimliClient error:", error);
+          setError(`Simli error: ${error.message}`);
+        });
+  
         simliClient?.on("disconnected", () => {
-          console.log("SimliClient disconnected");
-          // Reinitialize and restart
-    
-          
-          console.log("Successfully reconnected to SimliClient");
-          // openAIClientRef.current?.disconnect();
-          // if (audioContextRef.current) {
-          //   audioContextRef.current?.close();
-          // }
+          console.log("SimliClient disconnected - attempting reconnection");
+          // Implement reconnection logic if needed
         });
       }
-
+  
       return () => {
         try {
           simliClient?.close();
@@ -459,7 +526,9 @@ const SimliOpenAI: React.FC<SimliOpenAIProps> = ({
           if (audioContextRef.current) {
             audioContextRef.current?.close();
           }
-        } catch {}
+        } catch (error) {
+          console.error("Cleanup error:", error);
+        }
       };
     }
     isSecondRun.current = true;
