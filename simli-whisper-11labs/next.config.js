@@ -4,7 +4,6 @@
 //     reactStrictMode: true,
 //   }
 // export default nextConfig;
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   webpack: (config, { isServer }) => {

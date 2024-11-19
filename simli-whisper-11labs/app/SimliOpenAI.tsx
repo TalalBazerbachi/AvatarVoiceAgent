@@ -88,7 +88,7 @@ const SimliOpenAI: React.FC<SimliOpenAIProps> = ({
         console.log("Simli Client initialized successfully");
       } catch (error) {
         console.error("Error initializing Simli client:", error);
-        setError("Failed to initialize Simli client: ",error.message);
+        setError(`Failed to initialize Simli client: ${error}`);
       }
     } else {
       console.error("Video or audio ref not available");
@@ -428,7 +428,7 @@ const SimliOpenAI: React.FC<SimliOpenAIProps> = ({
       await simliClient?.start();
     } catch (error: any) {
       console.error("Error starting interaction:", error);
-      setError(`Error starting interaction: ${error.message}`);
+      setError(`Error starting interaction: ${error}`);
     } finally {
       setIsAvatarVisible(true);
       setIsLoading(false);
@@ -504,14 +504,14 @@ const SimliOpenAI: React.FC<SimliOpenAIProps> = ({
             initializeOpenAIClient();
           } catch (error) {
             console.error("Error during initial setup:", error);
-            setError(`Connection error: ${error.message}`);
+            setError(`Connection error: ${error}`);
           }
         });
   
-        simliClient?.on("error", (error: any) => {
-          console.error("SimliClient error:", error);
-          setError(`Simli error: ${error.message}`);
-        });
+        // simliClient?.on("error", (error: any) => {
+        //   console.error("SimliClient error:", error);
+        //   setError(`Simli error: ${error.message}`);
+        // });
   
         simliClient?.on("disconnected", () => {
           console.log("SimliClient disconnected - attempting reconnection");
