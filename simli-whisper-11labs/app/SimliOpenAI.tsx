@@ -550,16 +550,16 @@ const connectWithRetry = async (retryCount = 0) => {
           }
         });
   
-        simliClient?.on("error", (error: any) => {
-          console.error("SimliClient error:", error);
-          setError(`Simli error: ${error.message}`);
+        // simliClient?.on("error", (error: any) => {
+        //   console.error("SimliClient error:", error);
+        //   setError(`Simli error: ${error.message}`);
           
-          // Attempt to reconnect on error
-          setTimeout(() => {
-            console.log("Attempting to reconnect...");
-            initializeSimliClient();
-          }, 3000);
-        });
+        //   // Attempt to reconnect on error
+        //   setTimeout(() => {
+        //     console.log("Attempting to reconnect...");
+        //     initializeSimliClient();
+        //   }, 3000);
+        // });
   
         simliClient?.on("disconnected", () => {
           console.log("SimliClient disconnected - attempting reconnection");
