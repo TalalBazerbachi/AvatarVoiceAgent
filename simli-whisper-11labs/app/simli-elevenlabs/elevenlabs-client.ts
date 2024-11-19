@@ -18,7 +18,7 @@ interface ConversationConfig extends Partial<ConversationHandlers> {
 // Fixed mergeObjects implementation
 function mergeObjects<T>(...objects: Partial<T>[]): T {
     return objects.reduce((result, current) => {
-        return Object.assign(result, current);
+        return { ...result, ...current } as T;
     }, {} as T);
 }
 

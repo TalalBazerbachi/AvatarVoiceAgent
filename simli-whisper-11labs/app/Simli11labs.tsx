@@ -251,10 +251,10 @@ const SimliElevenlabs: React.FC<SimliElevenlabsProps> = ({
           setIsAvatarVisible(false);
         });
 
-        simliClient?.on("error", (error: any) => {
-          console.error("SimliClient error:", error);
-          setError(`Simli error: ${error.message}`);
-        });
+        // simliClient?.on("error", (error: any) => {
+        //   console.error("SimliClient error:", error);
+        //   setError(`Simli error: ${error.message}`);
+        // });
       }
 
       return () => {
