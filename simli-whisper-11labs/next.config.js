@@ -26,10 +26,18 @@ const nextConfig = {
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
           { key: 'Access-Control-Allow-Origin', value: '*' },
           { key: 'Access-Control-Allow-Methods', value: 'GET,OPTIONS,PATCH,DELETE,POST,PUT' },
-          { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version' },
+          { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Upgrade, Connection' },
         ],
       },
     ];
+  },
+  // Add WebSocket configuration
+  webSocketTransport: {
+    pingInterval: 25000,
+    pingTimeout: 60000,
+    reconnect: true,
+    reconnectAttempts: 5,
+    reconnectInterval: 1000,
   },
 };
 
