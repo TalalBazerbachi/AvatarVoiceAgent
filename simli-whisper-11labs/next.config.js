@@ -1,12 +1,6 @@
-// /** @type {import('next').NextConfig} */
-
-// const nextConfig = {
-//     reactStrictMode: true,
-//   }
-// export default nextConfig;
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
     // Add WebSocket support
     config.externals = [...(config.externals || [])];
     if (!isServer) {
@@ -15,6 +9,12 @@ const nextConfig = {
         ws: require.resolve('ws'),
       };
     }
+
+    // Disable webpack caching in production
+    if (!dev) {
+      config.cache = false;
+    }
+
     return config;
   },
   // Add headers for WebSocket support
