@@ -76,12 +76,17 @@ const SimliOpenAI: React.FC<SimliOpenAIProps> = ({
           maxIdleTime: 600,
           videoRef: videoRef,
           audioRef: audioRef,
-          debug: true // Enable debug logging
+          webSocket: {
+            reconnect: true,
+            reconnectAttempts: 5,
+            reconnectDelay: 3000,
+            timeout: 10000
+          }
         };
   
         console.log('Initializing Simli with config:', {
           ...SimliConfig,
-          apiKey: '[REDACTED]' // Don't log the API key
+          apiKey: '[REDACTED]'
         });
   
         simliClient.Initialize(SimliConfig as any);
@@ -545,14 +550,24 @@ const connectWithRetry = async (retryCount = 0) => {
           }
         });
   
-        // simliClient?.on("error", (error: any) => {
-        //   console.error("SimliClient error:", error);
-        //   setError(`Simli error: ${error.message}`);
-        // });
+        simliClient?.on("error", (error: any) => {
+          console.error("SimliClient error:", error);
+          setError(`Simli error: ${error.message}`);
+          
+          // Attempt to reconnect on error
+          setTimeout(() => {
+            console.log("Attempting to reconnect...");
+            initializeSimliClient();
+          }, 3000);
+        });
   
         simliClient?.on("disconnected", () => {
           console.log("SimliClient disconnected - attempting reconnection");
-          // Implement reconnection logic if needed
+          // Implement reconnection logic
+          setTimeout(() => {
+            console.log("Attempting to reconnect after disconnect...");
+            initializeSimliClient();
+          }, 3000);
         });
       }
   
