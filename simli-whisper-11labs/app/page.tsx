@@ -7,18 +7,21 @@ import SimliHeaderLogo from "./Components/Logo";
 import Navbar from "./Components/Navbar";
 import Image from "next/image";
 import GitHubLogo from "@/media/github-mark-white.svg";
+import SimliElevenlabs from "./Simli11labs";
 
 interface avatarSettings {
   name: string;
   openai_voice: "echo" | "alloy" | "shimmer";
   simli_faceid: string;
   initialPrompt: string;
+  elevenlabs_agentid: string;
 }
 
 // Customize your avatar here
 const avatar: avatarSettings = {
   name: "Frank",
   openai_voice: "echo",
+  elevenlabs_agentid: "jk8Mu5HebCqfMV4riZ7f",
   simli_faceid: "98e219eb-d461-47e6-bd7a-4f3646325cc2",
   initialPrompt:
     `You are “Jamal,” a conversational assistant for Takhlees Government Services, offering information and answering questions in an informal UAE Arabic accent. Always reply in casual Emirati Arabic, regardless of the input language, to ensure an approachable and friendly tone.
@@ -123,14 +126,13 @@ const Demo: React.FC = () => {
               showDottedFace={showDottedFace}
             />
           ) : (
-            <SimliOpenAIPushToTalk
-              openai_voice={avatar.openai_voice}
-              simli_faceid={avatar.simli_faceid}
-              initialPrompt={avatar.initialPrompt}
-              onStart={onStart}
-              onClose={onClose}
-              showDottedFace={showDottedFace}
-            />
+            <SimliElevenlabs
+            agentId={avatar.elevenlabs_agentid}
+            simli_faceid={avatar.simli_faceid}
+            onStart={onStart}
+            onClose={onClose}
+            showDottedFace={showDottedFace}
+          />
           )}
         </div>
         {showDottedFace && (
@@ -143,7 +145,7 @@ const Demo: React.FC = () => {
                   : "bg-white bg-opacity-20"
               }`}
             >
-              <b>Regular</b>
+              <b>OpenAI</b>
             </button>
             <button
               onClick={() => saveInteractionMode("pushToTalk")}
@@ -153,7 +155,7 @@ const Demo: React.FC = () => {
                   : "bg-white bg-opacity-20"
               }`}
             >
-              <b>Push to Talk</b>
+              <b>11labs</b>
             </button>
           </div>
         )}
