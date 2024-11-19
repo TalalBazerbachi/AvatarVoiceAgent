@@ -141,6 +141,27 @@ const SimliOpenAI: React.FC<SimliOpenAIProps> = ({
     }
   }, [initialPrompt]);
 
+  const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000; // 2 seconds
+
+const connectWithRetry = async (retryCount = 0) => {
+  try {
+    await simliClient?.start();
+    console.log("Successfully connected to Simli");
+  } catch (error) {
+    console.error(`Connection attempt ${retryCount + 1} failed:`, error);
+    
+    if (retryCount < MAX_RETRIES) {
+      console.log(`Retrying in ${RETRY_DELAY/1000} seconds...`);
+      setTimeout(() => {
+        connectWithRetry(retryCount + 1);
+      }, RETRY_DELAY);
+    } else {
+      console.error("Max retries reached. Connection failed.");
+      setError("Failed to connect to Simli after multiple attempts");
+    }
+  }
+};
   /**
    * Handles conversation updates, including user and assistant messages.
    */
@@ -417,24 +438,40 @@ const SimliOpenAI: React.FC<SimliOpenAIProps> = ({
   /**
    * Handles the start of the interaction, initializing clients and starting recording.
    */
+  // const handleStart = useCallback(async () => {
+  //   setIsLoading(true);
+  //   setError("");
+  //   onStart();
+
+  //   try {
+  //     console.log("Starting...");
+  //     initializeSimliClient();
+  //     await simliClient?.start();
+  //   } catch (error: any) {
+  //     console.error("Error starting interaction:", error);
+  //     setError(`Error starting interaction: ${error}`);
+  //   } finally {
+  //     setIsAvatarVisible(true);
+  //     setIsLoading(false);
+  //   }
+  // }, [onStart]);
   const handleStart = useCallback(async () => {
     setIsLoading(true);
     setError("");
     onStart();
-
+  
     try {
       console.log("Starting...");
       initializeSimliClient();
-      await simliClient?.start();
+      await connectWithRetry();
     } catch (error: any) {
       console.error("Error starting interaction:", error);
-      setError(`Error starting interaction: ${error}`);
+      setError(`Error starting interaction: ${error.message}`);
     } finally {
       setIsAvatarVisible(true);
       setIsLoading(false);
     }
   }, [onStart]);
-
   /**
    * Handles stopping the interaction, cleaning up resources and resetting states.
    */
