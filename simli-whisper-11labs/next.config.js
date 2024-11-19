@@ -39,6 +39,14 @@ const nextConfig = {
     reconnectAttempts: 5,
     reconnectInterval: 1000,
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: '/api/:path*',
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
