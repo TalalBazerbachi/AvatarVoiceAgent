@@ -40,7 +40,7 @@ const SimliOpenAI: React.FC<SimliOpenAIProps> = ({
   const audioContextRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
-  const isSecondRun = useRef(false);
+  const isSecondRun = useRef(true);
 
   // New refs for managing audio chunk delay
   const audioChunkQueueRef = useRef<Int16Array[]>([]);
