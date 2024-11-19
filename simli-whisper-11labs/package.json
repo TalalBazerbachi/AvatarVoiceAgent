@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start-server": "node server.js",
-    "start": "npm-run-all --parallel start-server dev",
+    "start": "npm-run-all --parallel dev",
     "lint": "next lint"
   },
   "dependencies": {
