@@ -110,7 +110,7 @@ const Demo: React.FC = () => {
   };
 
   return (
-    <div className="bg-black min-h-screen flex flex-col items-center font-abc-repro font-normal text-sm text-white p-8">
+    <div className="bg-black min-h-screen flex flex-col justify-center items-center font-abc-repro font-normal text-sm text-white p-8">
       <SimliHeaderLogo />
 
       <div className="flex flex-col items-center gap-6 bg-effect15White p-6 pb-[40px] rounded-xl w-full">

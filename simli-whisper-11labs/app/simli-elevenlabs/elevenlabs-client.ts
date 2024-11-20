@@ -15,21 +15,25 @@ interface ConversationConfig extends Partial<ConversationHandlers> {
     signedUrl?: string;
 }
 
-// Fixed mergeObjects implementation
-function mergeObjects<T>(...objects: Partial<T>[]): T {
+// Updated mergeObjects implementation
+function mergeObjects<T extends object>(...objects: Partial<T>[]): Partial<T> {
     return objects.reduce((result, current) => {
-        return { ...result, ...current } as T;
-    }, {} as T);
+        return { ...result, ...current };
+    }, {} as Partial<T>);
 }
 
 // Convert ArrayBuffer to Base64 string
-function arrayBufferToBase64(buffer) {
+function arrayBufferToBase64(buffer: ArrayBuffer) {
     const uint8Array = new Uint8Array(buffer);
-    return window.btoa(String.fromCharCode(...uint8Array));
+    let binaryString = '';
+    for (let i = 0; i < uint8Array.length; i++) {
+        binaryString += String.fromCharCode(uint8Array[i]);
+    }
+    return window.btoa(binaryString);
 }
 
 // Convert Base64 string to ArrayBuffer
-function base64ToArrayBuffer(base64String) {
+function base64ToArrayBuffer(base64String: string) {
     const binaryString = window.atob(base64String);
     const length = binaryString.length;
     const uint8Array = new Uint8Array(length);
@@ -40,7 +44,6 @@ function base64ToArrayBuffer(base64String) {
     
     return uint8Array.buffer;
 }
-
 // Audio processing worklet for raw audio handling
 const RAW_AUDIO_PROCESSOR_BLOB = new Blob([`
     const TARGET_SAMPLE_RATE = 16000;
@@ -113,7 +116,11 @@ const rawAudioProcessorUrl = URL.createObjectURL(RAW_AUDIO_PROCESSOR_BLOB);
 
 // Audio Input Handler Class
 class AudioInputHandler {
-    static async create(targetSampleRate) {
+    audioContext: AudioContext;
+    analyzerNode: AnalyserNode;
+    processorNode: AudioWorkletNode;
+    inputStream: MediaStream;
+    static async create(targetSampleRate: number) {
         let audioContext = null;
         let audioStream = null;
         
@@ -170,7 +177,7 @@ class AudioInputHandler {
         }
     }
     
-    constructor(audioContext, analyzerNode, processorNode, inputStream) {
+    constructor(audioContext: AudioContext, analyzerNode: AnalyserNode, processorNode: AudioWorkletNode, inputStream: MediaStream) {
         this.audioContext = audioContext;
         this.analyzerNode = analyzerNode;
         this.processorNode = processorNode;
@@ -272,7 +279,11 @@ const audioConcatProcessorUrl = URL.createObjectURL(AUDIO_CONCAT_PROCESSOR_BLOB)
 
 // Audio Output Handler Class
 class AudioOutputHandler {
-    static async create(targetSampleRate) {
+    audioContext: any;
+    analyzerNode: any;
+    gainNode: any;
+    processorNode: any;
+    static async create(targetSampleRate: number) {
         let audioContext = null;
         
         try {
@@ -307,7 +318,7 @@ class AudioOutputHandler {
         }
     }
 
-    constructor(audioContext, analyzerNode, gainNode, processorNode) {
+    constructor(audioContext: AudioContext, analyzerNode: AnalyserNode, gainNode: GainNode, processorNode: AudioWorkletNode) {
         this.audioContext = audioContext;
         this.analyzerNode = analyzerNode;
         this.gainNode = gainNode;
@@ -320,13 +331,16 @@ class AudioOutputHandler {
 }
 
 // Helper function to check if an object is an event type
-function isEventType(obj) {
+function isEventType(obj: any) {
     return !!obj.type;
 }
 
 // WebSocket Connection Handler Class
 class WebSocketHandler {
-    static async create(config) {
+    socket: any;
+    conversationId: any;
+    sampleRate: any;
+    static async create(config: ConversationConfig) {
         let webSocket = null;
         
         try {
@@ -338,23 +352,25 @@ class WebSocketHandler {
             webSocket = new WebSocket(wsUrl);
 
             // Wait for connection and initial metadata
-            const metadata = await this.waitForMetadata(webSocket);
+            const metadata = await this.waitForMetadata(webSocket) as {
+                conversation_id: string;
+                agent_output_audio_format: string;
+            };
             const conversationId = metadata.conversation_id;
             const sampleRate = parseInt(metadata.agent_output_audio_format.replace("pcm_", ""));
 
             return new WebSocketHandler(webSocket, conversationId, sampleRate);
-            
         } catch (error) {
             webSocket?.close();
             throw error;
         }
     }
 
-    static async waitForMetadata(webSocket) {
+    static async waitForMetadata(webSocket: WebSocket) {
         return new Promise((resolve, reject) => {
             webSocket.addEventListener("error", reject);
             webSocket.addEventListener("close", reject);
-            webSocket.addEventListener("message", event => {
+            webSocket.addEventListener("message", (event: MessageEvent) => {
                 const data = JSON.parse(event.data);
                 if (isEventType(data)) {
                     if (data.type === "conversation_initiation_metadata") {
@@ -367,7 +383,7 @@ class WebSocketHandler {
         });
     }
 
-    constructor(webSocket, conversationId, sampleRate) {
+    constructor(webSocket: WebSocket, conversationId: string, sampleRate: number) {
         this.socket = webSocket;
         this.conversationId = conversationId;
         this.sampleRate = sampleRate;
@@ -393,15 +409,24 @@ const DEFAULT_HANDLERS = {
  * Main conversation manager class that handles audio I/O and WebSocket communication
  */
 class ConversationManager {
+    settings: any;
+    connection: any;
+    audioInput: any;
+    audioOutput: any;
+    lastInterruptTime: number;
+    conversationMode: string;
+    connectionStatus: string;
+    audioVolume: number;
+    inputFrequencyData: Uint8Array | null;
+    outputFrequencyData: Uint8Array | null;
     static async startSession(config: ConversationConfig) {
         // Ensure we have all handlers by merging with defaults first
         const settings = mergeObjects<ConversationHandlers & ConversationConfig>(
             DEFAULT_HANDLERS,
             config || {}
         );
-
         // Now we can safely call handlers
-        settings.onStatusChange({ status: "connecting" });
+        settings.onStatusChange?.({ status: "connecting" });
 
         let audioInput = null;
         let wsConnection = null;
@@ -412,9 +437,9 @@ class ConversationManager {
             wsConnection = await WebSocketHandler.create(config);
             audioOutput = await AudioOutputHandler.create(wsConnection.sampleRate);
 
-            return new ConversationManager(settings, wsConnection, audioInput, audioOutput);
+            return new ConversationManager(settings as ConversationHandlers, wsConnection, audioInput, audioOutput);
         } catch (error) {
-            settings.onStatusChange({ status: "disconnected" });
+            settings.onStatusChange?.({ status: "disconnected" });
             wsConnection?.close();
             await audioInput?.close();
             await audioOutput?.close();
@@ -422,7 +447,7 @@ class ConversationManager {
         }
     }
 
-    constructor(settings, wsConnection, audioInput, audioOutput) {
+    constructor(settings: ConversationHandlers, wsConnection: WebSocketHandler, audioInput: AudioInputHandler, audioOutput: AudioOutputHandler) {
         this.settings = settings;
         this.connection = wsConnection;
         this.audioInput = audioInput;
@@ -465,7 +490,7 @@ class ConversationManager {
     /**
      * Handles incoming WebSocket messages
      */
-    handleWebSocketMessage = (event) => {
+    handleWebSocketMessage = (event: MessageEvent) => {
         try {
             const data = JSON.parse(event.data);
             if (!isEventType(data)) return;
@@ -501,42 +526,42 @@ class ConversationManager {
     /**
      * Handles different types of incoming messages
      */
-    handleInterruption(data) {
+    handleInterruption(data: any) {
         if (data.interruption_event) {
             this.lastInterruptTime = data.interruption_event.event_id;
         }
         this.fadeOutAudio();
     }
 
-    handleAgentResponse(data) {
+    handleAgentResponse(data: any) {
         this.settings.onMessage({
             source: "ai",
             message: data.agent_response_event.agent_response
         });
     }
 
-    handleUserTranscript(data) {
+    handleUserTranscript(data: any) {
         this.settings.onMessage({
             source: "user",
             message: data.user_transcription_event.user_transcript
         });
     }
 
-    handleTentativeResponse(data) {
+    handleTentativeResponse(data: any) {
         this.settings.onDebug({
             type: "tentative_agent_response",
             response: data.tentative_agent_response_internal_event.tentative_agent_response
         });
     }
 
-    handleIncomingAudio(data) {
+    handleIncomingAudio(data: any) {
         if (this.lastInterruptTime <= data.audio_event.event_id) {
             this.processIncomingAudio(data.audio_event.audio_base_64);
             this.updateConversationMode("speaking");
         }
     }
 
-    handlePing(data) {
+    handlePing(data: any) {
         this.connection.socket.send(JSON.stringify({
             type: "pong",
             event_id: data.ping_event.event_id
@@ -546,16 +571,20 @@ class ConversationManager {
     /**
      * Handles audio processing from input/output nodes
      */
-    handleInputAudioMessage = (event) => {
+    handleInputAudioMessage = (event: any) => {
         if (this.connectionStatus === "connected") {
+            // Convert Int16Array to Uint8Array before sending
+            const int16Data = event.data[0];
+            const uint8Data = new Uint8Array(int16Data.buffer);
+            
             const audioData = JSON.stringify({
-                user_audio_chunk: arrayBufferToBase64(event.data[0].buffer)
+                user_audio_chunk: arrayBufferToBase64(uint8Data.buffer)
             });
             this.connection.socket.send(audioData);
         }
     };
 
-    handleOutputAudioMessage = ({ data }) => {
+    handleOutputAudioMessage = ({ data }: { data: any }) => {
         if (data.type === "process") {
             this.updateConversationMode(data.finished ? "listening" : "speaking");
         }
@@ -564,7 +593,7 @@ class ConversationManager {
     /**
      * Audio processing methods
      */
-    async processIncomingAudio(base64Audio) {
+    async processIncomingAudio(base64Audio: string) {
         const audioBuffer = base64ToArrayBuffer(base64Audio);
         
         // Call the new onAudioData handler with output audio only
@@ -598,14 +627,14 @@ class ConversationManager {
     /**
      * State management methods
      */
-    updateConversationMode(newMode) {
+    updateConversationMode(newMode: string) {
         if (newMode !== this.conversationMode) {
             this.conversationMode = newMode;
             this.settings.onModeChange({ mode: newMode });
         }
     }
 
-    updateConnectionStatus(newStatus) {
+    updateConnectionStatus(newStatus: string) {
         if (newStatus !== this.connectionStatus) {
             this.connectionStatus = newStatus;
             this.settings.onStatusChange({ status: newStatus });
@@ -615,12 +644,12 @@ class ConversationManager {
     /**
      * Error handling
      */
-    handleError(message, details) {
+    handleError(message: string, details: any) {
         console.error(message, details);
         this.settings.onError(message, details);
     }
 
-    handleWebSocketError = (error) => {
+    handleWebSocketError = (error: any) => {
         this.updateConnectionStatus("disconnected");
         this.handleError("WebSocket error", error);
     };
@@ -647,30 +676,34 @@ class ConversationManager {
         return this.connection.conversationId;
     }
 
-    setVolume(config) {
+    setVolume(config: { volume: number }) {
         this.audioVolume = config.volume;
     }
 
-    /**
+        /**
      * Audio analysis methods for visualizations
      */
-    getInputFrequencyData() {
-        if (!this.inputFrequencyData) {
-            this.inputFrequencyData = new Uint8Array(this.audioInput.analyzerNode.frequencyBinCount);
+        getInputFrequencyData(): Uint8Array | null {
+            if (!this.audioInput?.analyzerNode) {
+                return null;
+            }
+            const frequencyData = new Uint8Array(this.audioInput.analyzerNode.frequencyBinCount);
+            this.audioInput.analyzerNode.getByteFrequencyData(frequencyData);
+            this.inputFrequencyData = frequencyData;
+            return frequencyData;
         }
-        this.audioInput.analyzerNode.getByteFrequencyData(this.inputFrequencyData);
-        return this.inputFrequencyData;
-    }
-
-    getOutputFrequencyData() {
-        if (!this.outputFrequencyData) {
-            this.outputFrequencyData = new Uint8Array(this.audioOutput.analyzerNode.frequencyBinCount);
+    
+        getOutputFrequencyData(): Uint8Array | null {
+            if (!this.audioOutput?.analyzerNode) {
+                return null;
+            }
+            const frequencyData = new Uint8Array(this.audioOutput.analyzerNode.frequencyBinCount);
+            this.audioOutput.analyzerNode.getByteFrequencyData(frequencyData);
+            this.outputFrequencyData = frequencyData;
+            return frequencyData;
         }
-        this.audioOutput.analyzerNode.getByteFrequencyData(this.outputFrequencyData);
-        return this.outputFrequencyData;
-    }
 
-    calculateVolumeLevel(frequencyData) {
+    calculateVolumeLevel(frequencyData: Uint8Array) {
         if (frequencyData.length === 0) return 0;
         
         const sum = frequencyData.reduce((acc, val) => acc + (val / 255), 0);
@@ -678,13 +711,20 @@ class ConversationManager {
         
         return Math.max(0, Math.min(1, average));
     }
-
     getInputVolume() {
-        return this.calculateVolumeLevel(this.getInputFrequencyData());
+        const inputFrequencyData = this.getInputFrequencyData();
+        if (inputFrequencyData === null) {
+            return 0;
+        }
+        return this.calculateVolumeLevel(inputFrequencyData);
     }
 
     getOutputVolume() {
-        return this.calculateVolumeLevel(this.getOutputFrequencyData());
+        const outputFrequencyData = this.getOutputFrequencyData();
+        if (outputFrequencyData === null) {
+            return 0;
+        }
+        return this.calculateVolumeLevel(outputFrequencyData);
     }
 }
 
