@@ -108,14 +108,13 @@ const Demo: React.FC = () => {
     console.log("Setting setshowDottedface to true...");
     setShowDottedFace(true);
   };
-
   return (
-    <div className="bg-black min-h-screen flex flex-col justify-center items-center font-abc-repro font-normal text-sm text-white p-8">
+    <div className="bg-white min-h-screen flex flex-col justify-center items-center font-abc-repro font-normal text-sm text-white p-8">
       <SimliHeaderLogo />
 
       <div className="flex flex-col items-center gap-6 bg-effect15White p-6 pb-[40px] rounded-xl w-full">
         <div>
-          {showDottedFace && <DottedFace />}
+          {/* {showDottedFace && <DottedFace color="bg-black" />} */}
           {interactionMode === "regular" ? (
             <SimliOpenAI
               openai_voice={avatar.openai_voice}
@@ -139,20 +138,20 @@ const Demo: React.FC = () => {
           <div className="flex gap-2 mt-4">
             <button
               onClick={() => saveInteractionMode("regular")}
-              className={`px-4 py-2 rounded-[100px] font-abc-repro-mono focus:bg-[#2f82fd] focus:text-white focus:rounded-[100px] hover:rounded-sm hover:bg-white hover:text-black transition-all duration-300 ${
+              className={`px-4 py-2 rounded-[100px] font-abc-repro-mono focus:bg-[#9e0049] focus:text-white focus:rounded-[100px] hover:rounded-sm hover:bg-white hover:text-black transition-all duration-300 ${
                 interactionMode === "regular"
-                  ? "bg-[#2f82fd]"
-                  : "bg-white bg-opacity-20"
+                  ? "bg-[#9e0049]"
+                  : "bg-gray-500"
               }`}
             >
               <b>OpenAI</b>
             </button>
             <button
               onClick={() => saveInteractionMode("pushToTalk")}
-              className={`px-4 py-2 rounded-[100px] font-abc-repro-mono focus:bg-[#2f82fd] focus:text-white focus:rounded-[100px] hover:rounded-sm hover:bg-white hover:text-black transition-all duration-300 ${
+              className={`px-4 py-2 rounded-[100px] font-abc-repro-mono focus:bg-[#9e0049] focus:text-white focus:rounded-[100px] hover:rounded-sm hover:bg-white hover:text-black transition-all duration-300 ${
                 interactionMode === "pushToTalk"
-                  ? "bg-[#2f82fd]"
-                  : "bg-white bg-opacity-20"
+                  ? "bg-[#9e0049]"
+                  : "bg-gray-500"
               }`}
             >
               <b>11labs</b>
@@ -160,6 +159,7 @@ const Demo: React.FC = () => {
           </div>
         )}
       </div>
+      <Navbar />
     </div>
   );
 };

@@ -2,7 +2,7 @@
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import React from 'react';
-import logo from '@/media/bytebeam.png';
+import logo from '@/media/takhlees_logo.webp';
 import cn from '@/app/utils/TailwindMergeAndClsx';
 
 interface Props {
@@ -15,12 +15,8 @@ const SimliHeaderLogo = ({ className, children }: Props) => {
   const pathname = usePathname();
 
   const handleClick = async () => {
-    console.log('Clicked Byte logo', pathname);
-    if (pathname === '/') {
-      window.location.reload();
-      return;
-    }
-    router.push('/');
+    console.log('Clicked Byte logo');
+    window.location.href = 'https://takhlees.ae';
   };
 
   return (
